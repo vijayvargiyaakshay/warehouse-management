@@ -1,8 +1,0 @@
-/home/akshay.vijayvargiya/Azilen_Learning/New_project/java-assignment/src/test/java/com/fulfilment/application/monolith/warehouses/adapters/restapi/WarehouseEndpointIT.java
-/home/akshay.vijayvargiya/Azilen_Learning/New_project/java-assignment/src/test/java/com/fulfilment/application/monolith/location/LocationGatewayTest.java
-/home/akshay.vijayvargiya/Azilen_Learning/New_project/java-assignment/src/test/java/com/fulfilment/application/monolith/warehouses/domain/usecases/ArchiveWarehouseUseCaseTest.java
-/home/akshay.vijayvargiya/Azilen_Learning/New_project/java-assignment/src/test/java/com/fulfilment/application/monolith/warehouses/adapters/restapi/WarehouseEndpointTest.java
-/home/akshay.vijayvargiya/Azilen_Learning/New_project/java-assignment/src/test/java/com/fulfilment/application/monolith/stores/StoreResourceTest.java
-/home/akshay.vijayvargiya/Azilen_Learning/New_project/java-assignment/src/test/java/com/fulfilment/application/monolith/warehouses/domain/usecases/CreateWarehouseUseCaseTest.java
-/home/akshay.vijayvargiya/Azilen_Learning/New_project/java-assignment/src/test/java/com/fulfilment/application/monolith/warehouses/domain/usecases/ReplaceWarehouseUseCaseTest.java
-/home/akshay.vijayvargiya/Azilen_Learning/New_project/java-assignment/src/test/java/com/fulfilment/application/monolith/products/ProductEndpointTest.java
