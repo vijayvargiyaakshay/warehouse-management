@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CreateWarehouseUseCase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-code-assignment</a> &gt; <a href="index.source.html" class="el_package">com.fulfilment.application.monolith.warehouses.domain.usecases</a> &gt; <span class="el_source">CreateWarehouseUseCase.java</span></div><h1>CreateWarehouseUseCase.java</h1><pre class="source lang-java linenums">package com.fulfilment.application.monolith.warehouses.domain.usecases;
+
+import com.fulfilment.application.monolith.warehouses.domain.exceptions.DuplicateWarehouseException;
+import com.fulfilment.application.monolith.warehouses.domain.exceptions.WarehouseValidationException;
+import com.fulfilment.application.monolith.warehouses.domain.models.Location;
+import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
+import com.fulfilment.application.monolith.warehouses.domain.ports.CreateWarehouseOperation;
+import com.fulfilment.application.monolith.warehouses.domain.ports.LocationResolver;
+import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
+import jakarta.enterprise.context.ApplicationScoped;
+import java.util.List;
+
+@ApplicationScoped
+public class CreateWarehouseUseCase implements CreateWarehouseOperation {
+
+  private final WarehouseStore warehouseStore;
+  private final LocationResolver locationResolver;
+
+<span class="fc" id="L19">  public CreateWarehouseUseCase(WarehouseStore warehouseStore, LocationResolver locationResolver) {</span>
+<span class="fc" id="L20">    this.warehouseStore = warehouseStore;</span>
+<span class="fc" id="L21">    this.locationResolver = locationResolver;</span>
+<span class="fc" id="L22">  }</span>
+
+  @Override
+  public void create(Warehouse warehouse) {
+<span class="pc bpc" id="L26" title="1 of 4 branches missed.">    if (warehouse.businessUnitCode == null || warehouse.businessUnitCode.isBlank()) {</span>
+<span class="fc" id="L27">      throw new WarehouseValidationException(&quot;Business unit code must be provided.&quot;);</span>
+    }
+
+    // 1. Business unit code must not already belong to an active warehouse.
+<span class="fc bfc" id="L31" title="All 2 branches covered.">    if (warehouseStore.findByBusinessUnitCode(warehouse.businessUnitCode) != null) {</span>
+<span class="fc" id="L32">      throw new DuplicateWarehouseException(</span>
+          &quot;Warehouse with business unit code &quot;
+              + warehouse.businessUnitCode
+              + &quot; already exists.&quot;);
+    }
+
+    // 2. The location must be a known, valid location.
+<span class="fc" id="L39">    Location location = locationResolver.resolveByIdentifier(warehouse.location);</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">    if (location == null) {</span>
+<span class="fc" id="L41">      throw new WarehouseValidationException(</span>
+          &quot;Location &quot; + warehouse.location + &quot; is not a valid location.&quot;);
+    }
+
+    // 3. The location must still have room for another warehouse.
+<span class="fc" id="L46">    List&lt;Warehouse&gt; activeAtLocation =</span>
+<span class="fc" id="L47">        warehouseStore.getAll().stream()</span>
+<span class="fc" id="L48">            .filter(w -&gt; location.identification.equals(w.location))</span>
+<span class="fc" id="L49">            .toList();</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">    if (activeAtLocation.size() &gt;= location.maxNumberOfWarehouses) {</span>
+<span class="fc" id="L51">      throw new WarehouseValidationException(</span>
+          &quot;Maximum number of warehouses reached for location &quot; + location.identification + &quot;.&quot;);
+    }
+
+    // 4. Capacity must be positive and must fit within the location's remaining capacity.
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">    if (warehouse.capacity == null || warehouse.capacity &lt;= 0) {</span>
+<span class="fc" id="L57">      throw new WarehouseValidationException(&quot;Warehouse capacity must be greater than zero.&quot;);</span>
+    }
+<span class="pc" id="L59">    int usedCapacity = activeAtLocation.stream().mapToInt(w -&gt; w.capacity).sum();</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">    if (usedCapacity + warehouse.capacity &gt; location.maxCapacity) {</span>
+<span class="fc" id="L61">      throw new WarehouseValidationException(</span>
+          &quot;Warehouse capacity exceeds the maximum capacity of location &quot;
+              + location.identification
+              + &quot;.&quot;);
+    }
+
+    // 5. Stock must fit within the warehouse's own capacity.
+<span class="pc bpc" id="L68" title="1 of 4 branches missed.">    if (warehouse.stock == null || warehouse.stock &gt; warehouse.capacity) {</span>
+<span class="fc" id="L69">      throw new WarehouseValidationException(</span>
+          &quot;Warehouse stock cannot exceed its capacity.&quot;);
+    }
+
+    // if all went well, create the warehouse
+<span class="fc" id="L74">    warehouseStore.create(warehouse);</span>
+<span class="fc" id="L75">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

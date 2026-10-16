@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WarehouseResourceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-code-assignment</a> &gt; <a href="index.source.html" class="el_package">com.fulfilment.application.monolith.warehouses.adapters.restapi</a> &gt; <span class="el_source">WarehouseResourceImpl.java</span></div><h1>WarehouseResourceImpl.java</h1><pre class="source lang-java linenums">package com.fulfilment.application.monolith.warehouses.adapters.restapi;
+
+import com.fulfilment.application.monolith.warehouses.adapters.database.DbWarehouse;
+import com.fulfilment.application.monolith.warehouses.adapters.database.WarehouseRepository;
+import com.fulfilment.application.monolith.warehouses.domain.exceptions.WarehouseNotFoundException;
+import com.fulfilment.application.monolith.warehouses.domain.ports.ArchiveWarehouseOperation;
+import com.fulfilment.application.monolith.warehouses.domain.ports.CreateWarehouseOperation;
+import com.fulfilment.application.monolith.warehouses.domain.ports.ReplaceWarehouseOperation;
+import com.warehouse.api.WarehouseResource;
+import com.warehouse.api.beans.Warehouse;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.NotNull;
+import java.util.List;
+
+@RequestScoped
+<span class="fc" id="L18">public class WarehouseResourceImpl implements WarehouseResource {</span>
+
+  @Inject WarehouseRepository warehouseRepository;
+  @Inject CreateWarehouseOperation createWarehouseOperation;
+  @Inject ReplaceWarehouseOperation replaceWarehouseOperation;
+  @Inject ArchiveWarehouseOperation archiveWarehouseOperation;
+
+  @Override
+  public List&lt;Warehouse&gt; listAllWarehousesUnits() {
+<span class="fc" id="L27">    return warehouseRepository.getAll().stream().map(this::toWarehouseResponse).toList();</span>
+  }
+
+  @Override
+  @Transactional
+  public Warehouse createANewWarehouseUnit(@NotNull Warehouse data) {
+<span class="fc" id="L33">    var warehouse = toDomain(data);</span>
+<span class="fc" id="L34">    createWarehouseOperation.create(warehouse);</span>
+    // re-read the persisted entity so the response carries the generated id
+<span class="fc" id="L36">    DbWarehouse saved =</span>
+<span class="fc" id="L37">        warehouseRepository.findActiveEntityByBusinessUnitCode(warehouse.businessUnitCode);</span>
+<span class="fc" id="L38">    return toWarehouseResponse(saved);</span>
+  }
+
+  @Override
+  public Warehouse getAWarehouseUnitByID(String id) {
+<span class="fc" id="L43">    DbWarehouse entity = warehouseRepository.findById(parseId(id));</span>
+<span class="fc bfc" id="L44" title="All 4 branches covered.">    if (entity == null || entity.archivedAt != null) {</span>
+<span class="fc" id="L45">      throw new WarehouseNotFoundException(&quot;Warehouse with id &quot; + id + &quot; does not exist.&quot;);</span>
+    }
+<span class="fc" id="L47">    return toWarehouseResponse(entity);</span>
+  }
+
+  @Override
+  @Transactional
+  public void archiveAWarehouseUnitByID(String id) {
+<span class="fc" id="L53">    DbWarehouse entity = warehouseRepository.findById(parseId(id));</span>
+<span class="pc bpc" id="L54" title="2 of 4 branches missed.">    if (entity == null || entity.archivedAt != null) {</span>
+<span class="nc" id="L55">      throw new WarehouseNotFoundException(&quot;Warehouse with id &quot; + id + &quot; does not exist.&quot;);</span>
+    }
+<span class="fc" id="L57">    archiveWarehouseOperation.archive(entity.toWarehouse());</span>
+<span class="fc" id="L58">  }</span>
+
+  @Override
+  @Transactional
+  public Warehouse replaceTheCurrentActiveWarehouse(
+      String businessUnitCode, @NotNull Warehouse data) {
+<span class="fc" id="L64">    var warehouse = toDomain(data);</span>
+<span class="fc" id="L65">    warehouse.businessUnitCode = businessUnitCode;</span>
+<span class="fc" id="L66">    replaceWarehouseOperation.replace(warehouse);</span>
+    // re-read the newly created active warehouse so the response carries its generated id
+<span class="fc" id="L68">    DbWarehouse saved = warehouseRepository.findActiveEntityByBusinessUnitCode(businessUnitCode);</span>
+<span class="fc" id="L69">    return toWarehouseResponse(saved);</span>
+  }
+
+  private Long parseId(String id) {
+    try {
+<span class="fc" id="L74">      return Long.valueOf(id);</span>
+<span class="nc" id="L75">    } catch (NumberFormatException e) {</span>
+<span class="nc" id="L76">      throw new WarehouseNotFoundException(&quot;Warehouse with id &quot; + id + &quot; does not exist.&quot;);</span>
+    }
+  }
+
+  private com.fulfilment.application.monolith.warehouses.domain.models.Warehouse toDomain(
+      Warehouse data) {
+<span class="fc" id="L82">    var warehouse = new com.fulfilment.application.monolith.warehouses.domain.models.Warehouse();</span>
+<span class="fc" id="L83">    warehouse.businessUnitCode = data.getBusinessUnitCode();</span>
+<span class="fc" id="L84">    warehouse.location = data.getLocation();</span>
+<span class="fc" id="L85">    warehouse.capacity = data.getCapacity();</span>
+<span class="fc" id="L86">    warehouse.stock = data.getStock();</span>
+<span class="fc" id="L87">    return warehouse;</span>
+  }
+
+  private Warehouse toWarehouseResponse(
+      com.fulfilment.application.monolith.warehouses.domain.models.Warehouse warehouse) {
+<span class="fc" id="L92">    var response = new Warehouse();</span>
+<span class="fc" id="L93">    response.setBusinessUnitCode(warehouse.businessUnitCode);</span>
+<span class="fc" id="L94">    response.setLocation(warehouse.location);</span>
+<span class="fc" id="L95">    response.setCapacity(warehouse.capacity);</span>
+<span class="fc" id="L96">    response.setStock(warehouse.stock);</span>
+<span class="fc" id="L97">    return response;</span>
+  }
+
+  private Warehouse toWarehouseResponse(DbWarehouse entity) {
+<span class="fc" id="L101">    var response = toWarehouseResponse(entity.toWarehouse());</span>
+<span class="fc" id="L102">    response.setId(String.valueOf(entity.id));</span>
+<span class="fc" id="L103">    return response;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
